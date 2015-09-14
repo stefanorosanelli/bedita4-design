@@ -15,27 +15,27 @@
 CREATE TABLE objects (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  type_id SMALLINT UNSIGNED NOT NULL,
-  status TINYINT NOT NULL default 0,
-  created DATETIME NOT NULL,
-  modified DATETIME NOT NULL,
+  type_id SMALLINT UNSIGNED NOT NULL        COMMENT 'object type id',
+  status TINYINT NOT NULL default 0         COMMENT 'object status: on, draft, off',
+  uname VARCHAR(255) NOT NULL               COMMENT 'unique and url friendly resource name (slug)',
+  created DATETIME NOT NULL                 COMMENT 'creation date',
+  modified DATETIME NOT NULL                COMMENT 'last modification date',
+  published DATETIME NOT NULL               COMMENT 'publication date, status set to ON',
   title TEXT NOT NULL,
-  uname TEXT NOT NULL,
-  lang CHAR(3) NOT NULL,
-  user_created INTEGER UNSIGNED NOT NULL,
-  user_modified INTEGER UNSIGNED NOT NULL,
-  params MEDIUMTEXT NULL,
-  start_date DATETIME NULL ,
-  end_date DATETIME NULL,
   description MEDIUMTEXT NULL,
   body MEDIUMTEXT NULL,
+  extra MEDIUMTEXT NULL                     COMMENT 'object data extensions (JSON format)',
+  lang CHAR(3) NOT NULL,                    COMMENT 'language used, ISO 639-3 code'
+  user_created INTEGER UNSIGNED NOT NULL    COMMENT 'user who created object',
+  user_modified INTEGER UNSIGNED NOT NULL   COMMENT 'last user to modify object',
+  publish_start DATETIME NULL               COMMENT 'publish from this date on',
+  publish_end DATETIME NULL                 COMMENT 'publish until this date',
 
   PRIMARY KEY (id),
   UNIQUE KEY (uname),
-  INDEX (type_id),
--- TODO: index, 
+  INDEX (type_id)
 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'base table for all objects';
 
 
 CREATE TABLE media (
@@ -49,7 +49,6 @@ CREATE TABLE media (
   original_name TEXT NULL           COMMENT 'original name for uploaded file',
   width MEDIUMINT(6) UNSIGNED NULL  COMMENT '(image) width',
   height MEDIUMINT(6) UNSIGNED NULL COMMENT '(image) height',
-
   provider VARCHAR(100) NULL        COMMENT 'external provider/service name',
   media_uid VARCHAR(128) NULL       COMMENT 'uid, used for remote videos',
   thumbnail VARCHAR(255) NULL       COMMENT 'remote media thumbnail URL',
@@ -68,16 +67,16 @@ CREATE TABLE media (
 CREATE TABLE relations (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  left_id INT UNSIGNED NOT NULL,
-  name TINYTEXT NOT NULL,
-  right_id INT UNSIGNED NOT NULL,
-  params MEDIUMTEXT NULL,
-  inv_name TINYTEXT NOT NULL,
+  left_id INT UNSIGNED NOT NULL     COMMENT 'left part of the relation object id',
+  name TINYTEXT NOT NULL            COMMENT 'relation name',
+  right_id INT UNSIGNED NOT NULL    COMMENT 'right part of the relation object id',
+  inv_name TINYTEXT NOT NULL        COMMENT 'inverse relation name',
+  params MEDIUMTEXT NULL            COMMENT 'relation parameters (JSON format)',
 
   PRIMARY KEY (id),
   UNIQUE KEY (left_id, name, right_id),
   INDEX (left_id),
-  INDEX (right_id)
+  INDEX (right_id),
 
   FOREIGN KEY(left_id)
     REFERENCES objects(id)
@@ -88,51 +87,5 @@ CREATE TABLE relations (
       ON DELETE CASCADE
       ON UPDATE NO ACTION
 
-);
-
--- CREATE TABLE trees ();
-
--- CREATE TABLE categories ();
-
--- CREATE TABLE dates ();
--- CREATE TABLE labels ();
--- CREATE TABLE locations ();
--- CREATE TABLE codes ();
-
--- CREATE TABLE groups (
--- CREATE TABLE groups_users (
-
--- CREATE TABLE hash_jobs ()
-
--- CREATE TABLE history (
-
--- CREATE TABLE images (
-
--- CREATE TABLE links ()
-
--- CREATE TABLE mail_jobs (
--- CREATE TABLE mail_logs (
-
--- CREATE TABLE modules (
-
--- CREATE TABLE object_categories (
-
--- CREATE TABLE object_editors (
--- CREATE TABLE object_properties (
--- CREATE TABLE object_relations (
--- CREATE TABLE object_types (
-
--- CREATE TABLE object_users (
-
--- CREATE TABLE permissions (
--- CREATE TABLE `permission_modules` (
--- CREATE TABLE properties (
--- CREATE TABLE property_options (
--- CREATE TABLE `search_texts` (
-
--- CREATE TABLE streams (
--- CREATE TABLE user_properties (
--- CREATE TABLE users (
--- CREATE TABLE versions (
--- CREATE TABLE videos (
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'relations between objects';
 
