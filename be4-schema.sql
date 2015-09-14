@@ -44,14 +44,14 @@ CREATE TABLE media (
   uri TEXT NOT NULL                 COMMENT 'media uri: relative path on local filesystem or remote URL',
   name TEXT NULL                    COMMENT 'file name',
   mime_type TINYTEXT NOT NULL       COMMENT 'resource mime type',
-  file_size INT UNSIGNED NULL       COMMENT 'file size in bytes (if local)',
+  file_size INT(11) UNSIGNED NULL   COMMENT 'file size in bytes (if local)',
   hash_file VARCHAR(255) NULL       COMMENT 'md5 hash of local file',
   original_name TEXT NULL           COMMENT 'original name for uploaded file',
   width MEDIUMINT(6) UNSIGNED NULL  COMMENT '(image) width',
   height MEDIUMINT(6) UNSIGNED NULL COMMENT '(image) height',
-  provider VARCHAR(100) NULL        COMMENT 'external provider/service name',
-  media_uid VARCHAR(128) NULL       COMMENT 'uid, used for remote videos',
-  thumbnail VARCHAR(255) NULL       COMMENT 'remote media thumbnail URL',
+  provider  TINYTEXT NULL           COMMENT 'external provider/service name',
+  media_uid VARCHAR(255) NULL       COMMENT 'uid, used for remote videos',
+  thumbnail TINYTEXT NULL           COMMENT 'remote media thumbnail URL',
 
   PRIMARY KEY(id),
   INDEX hash_file_index(hash_file),
@@ -88,4 +88,3 @@ CREATE TABLE relations (
       ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'relations between objects';
-
