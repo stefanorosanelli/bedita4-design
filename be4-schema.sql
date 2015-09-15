@@ -25,7 +25,7 @@ CREATE TABLE objects (
   description MEDIUMTEXT NULL,
   body MEDIUMTEXT NULL,
   extra MEDIUMTEXT NULL                     COMMENT 'object data extensions (JSON format)',
-  lang CHAR(3) NOT NULL,                    COMMENT 'language used, ISO 639-3 code'
+  lang CHAR(3) NOT NULL                     COMMENT 'language used, ISO 639-3 code',
   user_created INTEGER UNSIGNED NOT NULL    COMMENT 'user who created object',
   user_modified INTEGER UNSIGNED NOT NULL   COMMENT 'last user to modify object',
   publish_start DATETIME NULL               COMMENT 'publish from this date on',
