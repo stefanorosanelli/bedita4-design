@@ -54,7 +54,7 @@ CREATE TABLE media (
   thumbnail TINYTEXT NULL           COMMENT 'remote media thumbnail URL',
 
   PRIMARY KEY(id),
-  INDEX hash_file_index(hash_file),
+  INDEX (hash_file),
 
   FOREIGN KEY(id)
     REFERENCES objects(id)
@@ -67,14 +67,14 @@ CREATE TABLE media (
 CREATE TABLE relations (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  left_id INT UNSIGNED NOT NULL     COMMENT 'left part of the relation object id',
-  name TINYTEXT NOT NULL            COMMENT 'relation name',
-  right_id INT UNSIGNED NOT NULL    COMMENT 'right part of the relation object id',
-  inv_name TINYTEXT NOT NULL        COMMENT 'inverse relation name',
-  params MEDIUMTEXT NULL            COMMENT 'relation parameters (JSON format)',
+  left_id INT UNSIGNED NOT NULL         COMMENT 'left part of the relation object id',
+  name VARCHAR(255) NOT NULL            COMMENT 'relation name',
+  right_id INT UNSIGNED NOT NULL        COMMENT 'right part of the relation object id',
+  inv_name VARCHAR(255) NOT NULL        COMMENT 'inverse relation name',
+  params MEDIUMTEXT NULL                COMMENT 'relation parameters (JSON format)',
 
   PRIMARY KEY (id),
-  UNIQUE KEY (left_id, name, right_id),
+  UNIQUE KEY left_name_right (left_id, name, right_id),
   INDEX (left_id),
   INDEX (right_id),
 
