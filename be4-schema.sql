@@ -18,6 +18,7 @@ CREATE TABLE objects (
   type_id SMALLINT UNSIGNED NOT NULL        COMMENT 'object type id',
   status TINYINT NOT NULL default 0         COMMENT 'object status: on, draft, off',
   uname VARCHAR(255) NOT NULL               COMMENT 'unique and url friendly resource name (slug)',
+  locked BOOLEAN NOT NULL default 0         COMMENT 'locked flag: some fields (status, uname,...) cannot be changed',
   created DATETIME NOT NULL                 COMMENT 'creation date',
   modified DATETIME NOT NULL                COMMENT 'last modification date',
   published DATETIME NOT NULL               COMMENT 'publication date, status set to ON',
@@ -26,8 +27,8 @@ CREATE TABLE objects (
   body MEDIUMTEXT NULL,
   extra MEDIUMTEXT NULL                     COMMENT 'object data extensions (JSON format)',
   lang CHAR(3) NOT NULL                     COMMENT 'language used, ISO 639-3 code',
-  user_created INTEGER UNSIGNED NOT NULL    COMMENT 'user who created object',
-  user_modified INTEGER UNSIGNED NOT NULL   COMMENT 'last user to modify object',
+  created_by INTEGER UNSIGNED NOT NULL      COMMENT 'user who created object',
+  modified_by INTEGER UNSIGNED NOT NULL     COMMENT 'last user to modify object',
   publish_start DATETIME NULL               COMMENT 'publish from this date on',
   publish_end DATETIME NULL                 COMMENT 'publish until this date',
 
