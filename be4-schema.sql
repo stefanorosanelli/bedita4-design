@@ -12,6 +12,7 @@
 -- BIGINT       18446744073709551615
 
 
+-- Objects table
 CREATE TABLE objects (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -39,6 +40,7 @@ CREATE TABLE objects (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'base table for all objects';
 
 
+-- Media table
 CREATE TABLE media (
 
   id INT UNSIGNED NOT NULL,
@@ -65,6 +67,7 @@ CREATE TABLE media (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'media objects like images, audio, videos, files';
 
 
+-- Relations table
 CREATE TABLE relations (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -89,3 +92,36 @@ CREATE TABLE relations (
       ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'relations between objects';
+
+
+-- Trees table
+CREATE TABLE tree (
+
+  object_id INT UNSIGNED NOT NULL       COMMENT 'object id',
+  parent_id INT UNSIGNED NULL           COMMENT 'parent object id',
+  area_id INT UNSIGNED NOT NULL         COMMENT 'area id (for tree scoping)',
+  lft INT NOT NULL                      COMMENT 'left counter (for nested set model)',
+  rght INT NOT NULL                     COMMENT 'right counter (for nested set model)',
+  depth INT UNSIGNED NOT NULL           COMMENT 'depth',
+  menu INT UNSIGNED NOT NULL DEFAULT 1  COMMENT 'menu on/off',
+
+  PRIMARY KEY(parent_id, object_id),
+  INDEX object_parent (object_id, parent_id),
+  INDEX area_left (area_id, lft),
+  INDEX area_right (area_id, rght),
+  INDEX (menu),
+
+  FOREIGN KEY(object_id)
+    REFERENCES objects(id)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION,
+  FOREIGN KEY(parent_id)
+    REFERENCES objects(id)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION,
+  FOREIGN KEY(area_id)
+    REFERENCES objects(id)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'tree structure';
