@@ -67,18 +67,48 @@ CREATE TABLE media (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'media objects like images, audio, videos, files';
 
 
+-- Relation definitions table
+CREATE TABLE relation_definitions (
+
+  name VARCHAR(255) NOT NULL            COMMENT 'relation name',
+  label TEXT NOT NULL                   COMMENT 'relation label',
+  inverse_name VARCHAR(255) NOT NULL    COMMENT 'inverse relation name',
+  inverse_label TEXT NOT NULL           COMMENT 'inverse relation label',
+  params MEDIUMTEXT NULL                COMMENT 'relation parameters definitions (JSON format)',
+
+  PRIMARY KEY (name),
+  UNIQUE KEY (inverse_name)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'object relations definitions';
+
+-- Types in a relation
+CREATE TABLE relation_types (
+
+  name VARCHAR(255) NOT NULL                COMMENT 'relation name',
+  type_id SMALLINT UNSIGNED NOT NULL        COMMENT 'object type id',
+  position ENUM ('left', 'right') NOT NULL  COMMENT 'type position in relation',
+
+  PRIMARY KEY name_type_position (name, type_id, position),
+  
+    FOREIGN KEY(name)
+    REFERENCES relation_definitions(name)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'type constraints in object relations';
+
 -- Relations table
 CREATE TABLE relations (
 
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   left_id INT UNSIGNED NOT NULL         COMMENT 'left part of the relation object id',
   name VARCHAR(255) NOT NULL            COMMENT 'relation name',
   right_id INT UNSIGNED NOT NULL        COMMENT 'right part of the relation object id',
   inv_name VARCHAR(255) NOT NULL        COMMENT 'inverse relation name',
+  priority INT UNSIGNED NOT NULL        COMMENT 'priority order in relation',
+  inv_priority INT UNSIGNED NOT NULL    COMMENT 'priority order in inverse relation',
   params MEDIUMTEXT NULL                COMMENT 'relation parameters (JSON format)',
 
-  PRIMARY KEY (id),
-  UNIQUE KEY left_name_right (left_id, name, right_id),
+  PRIMARY KEY left_name_right (left_id, name, right_id),
   INDEX (left_id),
   INDEX (right_id),
 
@@ -88,6 +118,10 @@ CREATE TABLE relations (
       ON UPDATE NO ACTION,
   FOREIGN KEY(right_id)
     REFERENCES objects(id)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION,
+  FOREIGN KEY(name)
+    REFERENCES relation_definitions(name)
       ON DELETE CASCADE
       ON UPDATE NO ACTION
 
