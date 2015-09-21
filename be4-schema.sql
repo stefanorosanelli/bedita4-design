@@ -95,7 +95,7 @@ CREATE TABLE relations (
 
 
 -- Trees table
-CREATE TABLE tree (
+CREATE TABLE trees (
 
   object_id INT UNSIGNED NOT NULL       COMMENT 'object id',
   parent_id INT UNSIGNED NULL           COMMENT 'parent object id',
