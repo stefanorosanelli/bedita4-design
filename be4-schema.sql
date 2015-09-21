@@ -99,7 +99,7 @@ CREATE TABLE trees (
 
   object_id INT UNSIGNED NOT NULL       COMMENT 'object id',
   parent_id INT UNSIGNED NULL           COMMENT 'parent object id',
-  area_id INT UNSIGNED NOT NULL         COMMENT 'area id (for tree scoping)',
+  root_id INT UNSIGNED NOT NULL         COMMENT 'root id (for tree scoping)',
   lft INT NOT NULL                      COMMENT 'left counter (for nested set model)',
   rght INT NOT NULL                     COMMENT 'right counter (for nested set model)',
   depth INT UNSIGNED NOT NULL           COMMENT 'depth',
@@ -107,8 +107,8 @@ CREATE TABLE trees (
 
   PRIMARY KEY(parent_id, object_id),
   INDEX object_parent (object_id, parent_id),
-  INDEX area_left (area_id, lft),
-  INDEX area_right (area_id, rght),
+  INDEX root_left (root_id, lft),
+  INDEX root_right (root_id, rght),
   INDEX (menu),
 
   FOREIGN KEY(object_id)
@@ -119,7 +119,7 @@ CREATE TABLE trees (
     REFERENCES objects(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION,
-  FOREIGN KEY(area_id)
+  FOREIGN KEY(root_id)
     REFERENCES objects(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION
