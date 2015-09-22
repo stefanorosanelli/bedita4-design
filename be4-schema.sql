@@ -11,19 +11,32 @@
 -- INT          4294967295
 -- BIGINT       18446744073709551615
 
+-- -------------
+--   OBJECTS
+-- -------------
 
--- Objects table
+CREATE TABLE object_types (
+
+  id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name TINYTEXT NOT NULL                COMMENT 'object type name',
+  module_name VARCHAR(100)              COMMENT 'default module for object type',
+
+  PRIMARY KEY (id)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'obect types definition';
+
+
 CREATE TABLE objects (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   type_id SMALLINT UNSIGNED NOT NULL        COMMENT 'object type id',
-  status TINYINT NOT NULL default 0         COMMENT 'object status: on, draft, off',
+  status ENUM('on', 'off', 'draft', 'deleted') NOT NULL default 'draft'  COMMENT 'object status: on, draft, off, deleted',
   uname VARCHAR(255) NOT NULL               COMMENT 'unique and url friendly resource name (slug)',
   locked BOOLEAN NOT NULL default 0         COMMENT 'locked flag: some fields (status, uname,...) cannot be changed',
   created DATETIME NOT NULL                 COMMENT 'creation date',
   modified DATETIME NOT NULL                COMMENT 'last modification date',
   published DATETIME NOT NULL               COMMENT 'publication date, status set to ON',
-  title TEXT NOT NULL,
+  title TEXT NULL,
   description MEDIUMTEXT NULL,
   body MEDIUMTEXT NULL,
   extra MEDIUMTEXT NULL                     COMMENT 'object data extensions (JSON format)',
@@ -35,12 +48,16 @@ CREATE TABLE objects (
 
   PRIMARY KEY (id),
   UNIQUE KEY (uname),
-  INDEX (type_id)
+  INDEX (type_id),
+
+  FOREIGN KEY(type_id)
+    REFERENCES object_types(id)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'base table for all objects';
 
 
--- Media table
 CREATE TABLE media (
 
   id INT UNSIGNED NOT NULL,
@@ -67,7 +84,10 @@ CREATE TABLE media (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'media objects like images, audio, videos, files';
 
 
--- Relation definitions table
+-- -------------
+--   RELATIONS
+-- -------------
+
 CREATE TABLE relation_definitions (
 
   name VARCHAR(255) NOT NULL            COMMENT 'relation name',
@@ -90,14 +110,19 @@ CREATE TABLE relation_types (
 
   PRIMARY KEY name_type_position (name, type_id, position),
   
-    FOREIGN KEY(name)
+  FOREIGN KEY(name)
     REFERENCES relation_definitions(name)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION,
+  FOREIGN KEY(type_id)
+    REFERENCES object_types(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION
 
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'type constraints in object relations';
 
--- Relations table
+
 CREATE TABLE relations (
 
   left_id INT UNSIGNED NOT NULL         COMMENT 'left part of the relation object id',
@@ -128,7 +153,10 @@ CREATE TABLE relations (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'relations between objects';
 
 
--- Trees table
+-- -------------
+--   TREE
+-- -------------
+
 CREATE TABLE trees (
 
   object_id INT UNSIGNED NOT NULL       COMMENT 'object id',
