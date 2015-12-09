@@ -119,7 +119,6 @@ CREATE TABLE relation_types (
       ON DELETE CASCADE
       ON UPDATE NO ACTION
 
-
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'type constraints in object relations';
 
 
@@ -162,15 +161,15 @@ CREATE TABLE trees (
   object_id INT UNSIGNED NOT NULL       COMMENT 'object id',
   parent_id INT UNSIGNED NULL           COMMENT 'parent object id',
   root_id INT UNSIGNED NOT NULL         COMMENT 'root id (for tree scoping)',
-  lft INT NOT NULL                      COMMENT 'left counter (for nested set model)',
-  rght INT NOT NULL                     COMMENT 'right counter (for nested set model)',
+  tree_left INT NOT NULL                COMMENT 'left counter (for nested set model)',
+  tree_right INT NOT NULL               COMMENT 'right counter (for nested set model)',
   depth INT UNSIGNED NOT NULL           COMMENT 'depth',
   menu INT UNSIGNED NOT NULL DEFAULT 1  COMMENT 'menu on/off',
 
   PRIMARY KEY(parent_id, object_id),
   INDEX object_parent (object_id, parent_id),
-  INDEX root_left (root_id, lft),
-  INDEX root_right (root_id, rght),
+  INDEX root_left (root_id, tree_left),
+  INDEX root_right (root_id, tree_right),
   INDEX (menu),
 
   FOREIGN KEY(object_id)
