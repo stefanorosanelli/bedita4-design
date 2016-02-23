@@ -18,7 +18,7 @@ SET FOREIGN_KEY_CHECKS=0;
 --   USERS & AUTH
 -- ------------------
 
-DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -29,9 +29,9 @@ CREATE TABLE users (
   last_login_err DATETIME DEFAULT NULL        COMMENT 'last login filaure datetime',
   num_login_err TINYINT NOT NULL DEFAULT 0    COMMENT 'number of consecutive login failures',
   created DATETIME NOT NULL                   COMMENT 'record creation date',
-  -- from MySQL 5.6.5 `created` NOT NULL DATETIME DEFAULT CURRENT_TIMESTAMP,
+  -- from MySQL 5.6.5 created NOT NULL DATETIME DEFAULT CURRENT_TIMESTAMP,
   modified DATETIME NOT NULL                  COMMENT 'record last modification date',
-  -- from MySQL 5.6.5 `modified` NOT NULL DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  -- from MySQL 5.6.5 modified NOT NULL DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
   PRIMARY KEY  (id),
   UNIQUE KEY (username)
@@ -39,18 +39,19 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = 'authenticated users basic data';
 
 
-DROP TABLE IF EXISTS `auth_providers`;
+DROP TABLE IF EXISTS auth_providers;
 CREATE TABLE auth_providers (
 
   id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  provider_name TINYTEXT NOT NULL             COMMENT 'external provider name: facebook, google, github...',
-  provider_url TINYTEXT NOT NULL              COMMENT 'external provider url',
+  name TINYTEXT NOT NULL             COMMENT 'external provider name: facebook, google, github...',
+  url TINYTEXT NOT NULL              COMMENT 'external provider url',
+  params TINYTEXT NOT NULL           COMMENT 'external provider parameters',
 
   PRIMARY KEY  (id)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = 'supported external auth providers';
 
-DROP TABLE IF EXISTS `external_auth`;
+DROP TABLE IF EXISTS external_auth;
 CREATE TABLE external_auth (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -58,8 +59,10 @@ CREATE TABLE external_auth (
   auth_provider_id SMALLINT UNSIGNED NOT NULL COMMENT 'link to external auth provider: ',
   auth_params TEXT DEFAULT NULL               COMMENT 'external auth params, serialized JSON',
   -- From MySQL 5.7.8 JSON type
+  auth_username VARCHAR(255)                  COMMENT 'auth username on provider',
 
   PRIMARY KEY  (id),
+  UNIQUE KEY(auth_provider_id, auth_username),
   FOREIGN KEY (auth_provider_id) REFERENCES auth_providers(id),
   FOREIGN KEY(user_id)
     REFERENCES users(id)
@@ -72,10 +75,11 @@ CREATE TABLE external_auth (
 --   CONFIG
 -- -------------
 
-DROP TABLE IF EXISTS `config`;
+DROP TABLE IF EXISTS config;
 CREATE TABLE config (
 
   name VARCHAR(255) NOT NULL                  COMMENT 'configuration parameter key',
+  context TEXT NOT NULL                       COMMENT 'group of configuration parameters',
   value TEXT NOT NULL                         COMMENT 'external provider name: facebook, google, github...',
   created DATETIME NOT NULL                   COMMENT 'creation date',
 
@@ -87,7 +91,7 @@ CREATE TABLE config (
 --   OBJECTS
 -- -------------
 
-DROP TABLE IF EXISTS `object_types`;
+DROP TABLE IF EXISTS object_types;
 CREATE TABLE object_types (
 
   id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -100,11 +104,12 @@ CREATE TABLE object_types (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'obect types definitions';
 
 
-DROP TABLE IF EXISTS `property_types`;
+DROP TABLE IF EXISTS property_types;
 CREATE TABLE property_types (
 
   id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  name VARCHAR(50) NOT NULL                  COMMENT 'property type name',
+  name VARCHAR(50) NOT NULL                   COMMENT 'property type name',
+  params TEXT                                 COMMENT 'property type parameters',
 
   PRIMARY KEY (id),
   UNIQUE (name)
@@ -112,14 +117,15 @@ CREATE TABLE property_types (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'property types definitions';
 
 
-DROP TABLE IF EXISTS `properties`;
+DROP TABLE IF EXISTS properties;
 CREATE TABLE properties (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL                  COMMENT 'property name',
   object_type_id SMALLINT UNSIGNED NULL       COMMENT 'link to object_types.id',
   property_type_id SMALLINT UNSIGNED NOT NULL COMMENT 'link to property_type.id',
   multiple BOOL DEFAULT 0                     COMMENT 'multiple values for this property?',
+  options TEXT                                COMMENT 'property predefined options',
 
   PRIMARY KEY(id),
   UNIQUE name_type(name, object_type_id),
@@ -133,22 +139,8 @@ CREATE TABLE properties (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = 'object properties definitions' ;
 
 
-DROP TABLE IF EXISTS `property_options`;
-CREATE TABLE property_options (
-
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  property_id INT UNSIGNED NOT NULL           COMMENT 'link to properties.id',
-  property_option TEXT NOT NULL               COMMENT 'option item value',
-  PRIMARY KEY(id),
-  FOREIGN KEY(property_id)
-    REFERENCES properties(id)
-      ON DELETE CASCADE
-      ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = 'available items of properties of type option' ;
-
-
-DROP TABLE IF EXISTS `property_values`;
-CREATE TABLE property_values (
+DROP TABLE IF EXISTS object_properties;
+CREATE TABLE object_properties (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   property_id INT UNSIGNED NOT NULL           COMMENT 'link to properties.id',
@@ -168,11 +160,11 @@ CREATE TABLE property_values (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = 'object properties values' ;
 
 
-DROP TABLE IF EXISTS `objects`;
+DROP TABLE IF EXISTS objects;
 CREATE TABLE objects (
 
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  type_id SMALLINT UNSIGNED NOT NULL        COMMENT 'object type id',
+  object_type_id SMALLINT UNSIGNED NOT NULL COMMENT 'object type id',
   status ENUM('on', 'off', 'draft', 'deleted') NOT NULL DEFAULT 'draft'  COMMENT 'object status: on, draft, off, deleted',
   uname VARCHAR(255) NOT NULL               COMMENT 'unique and url friendly resource name (slug)',
   locked BOOLEAN NOT NULL DEFAULT 0         COMMENT 'locked flag: some fields (status, uname,...) cannot be changed',
@@ -192,20 +184,48 @@ CREATE TABLE objects (
 
   PRIMARY KEY (id),
   UNIQUE KEY (uname),
-  INDEX (type_id),
+  INDEX (object_type_id),
 
-  FOREIGN KEY(type_id)
+  FOREIGN KEY(object_type_id)
     REFERENCES object_types(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'base table for all objects';
 
+-- --------------------------------------
+--  OBJECT METADATA / SPECIAL PROPERTIES
+-- --------------------------------------
+
+DROP TABLE IF EXISTS annotations;
+CREATE TABLE annotations (
+
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  object_id INT UNSIGNED NOT NULL   COMMENT 'link to annotated object',
+  description TEXT NULL             COMMENT 'annotation author',
+  user_id INT UNSIGNED NOT NULL     COMMENT 'user creating this annotation',
+  created DATETIME NOT NULL         COMMENT 'creation date',
+  modified DATETIME NOT NULL        COMMENT 'last modification date',
+  params MEDIUMTEXT                 COMMENT 'annotation parameters (serialized JSON)',
+
+  PRIMARY KEY(id),
+  FOREIGN KEY(user_id) REFERENCES users(id),
+  FOREIGN KEY(object_id)
+    REFERENCES objects(id)
+      ON DELETE CASCADE
+      ON UPDATE NO ACTION
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = 'object annotations, comments, notes';
+
+-- DROP TABLE IF EXISTS date_items;
+-- CREATE TABLE date_items (
+-- );
+
 -- --------------------
 --  CORE OBJECT TYPES
 -- --------------------
 
-DROP TABLE IF EXISTS `media`;
+DROP TABLE IF EXISTS media;
 CREATE TABLE media (
 
   id INT UNSIGNED NOT NULL,
@@ -232,7 +252,7 @@ CREATE TABLE media (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'media objects like images, audio, videos, files';
 
 
-DROP TABLE IF EXISTS `profiles`;
+DROP TABLE IF EXISTS profiles;
 CREATE TABLE profiles (
   id INT UNSIGNED NOT NULL,
   user_id INT UNSIGNED NULL         COMMENT 'link to users.id, if not null',
@@ -269,36 +289,39 @@ CREATE TABLE profiles (
 --   RELATIONS
 -- -------------
 
-DROP TABLE IF EXISTS `relation_definitions`;
-CREATE TABLE relation_definitions (
+DROP TABLE IF EXISTS relations;
+CREATE TABLE relations (
 
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL            COMMENT 'relation name',
   label TINYTEXT NOT NULL               COMMENT 'relation label',
   inverse_name VARCHAR(100) NOT NULL    COMMENT 'inverse relation name',
   inverse_label TINYTEXT NOT NULL       COMMENT 'inverse relation label',
+  description TEXT                      COMMENT 'relation description',
   params MEDIUMTEXT NULL                COMMENT 'relation parameters definitions (JSON format)',
 -- From MySQL 5.7.8 use JSON type
 
-  PRIMARY KEY (name),
+  PRIMARY KEY (id),
+  UNIQUE KEY (name),
   UNIQUE KEY (inverse_name)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'object relations definitions';
 
 
-DROP TABLE IF EXISTS `relation_types`;
+DROP TABLE IF EXISTS relation_types;
 CREATE TABLE relation_types (
 
-  name VARCHAR(255) NOT NULL                COMMENT 'relation name',
-  type_id SMALLINT UNSIGNED NOT NULL        COMMENT 'object type id',
-  position ENUM ('left', 'right') NOT NULL  COMMENT 'type position in relation',
+  relation_id INT UNSIGNED NOT NULL             COMMENT 'link to relation definition',
+  object_type_id SMALLINT UNSIGNED NOT NULL     COMMENT 'object type id',
+  position ENUM ('left', 'right') NOT NULL      COMMENT 'type position in relation',
 
-  PRIMARY KEY name_type_position (name, type_id, position),
+  PRIMARY KEY relation_type_position (relation_id, object_type_id, position),
 
-  FOREIGN KEY(name)
-    REFERENCES relation_definitions(name)
+  FOREIGN KEY(relation_id) 
+    REFERENCES relations(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION,
-  FOREIGN KEY(type_id)
+  FOREIGN KEY(object_type_id)
     REFERENCES object_types(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION
@@ -306,19 +329,18 @@ CREATE TABLE relation_types (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'type constraints in object relations';
 
 
-DROP TABLE IF EXISTS `relations`;
-CREATE TABLE relations (
+DROP TABLE IF EXISTS object_relations;
+CREATE TABLE object_relations (
 
   left_id INT UNSIGNED NOT NULL         COMMENT 'left part of the relation object id',
-  name VARCHAR(255) NOT NULL            COMMENT 'relation name',
+  relation_id INT UNSIGNED NOT NULL     COMMENT 'link to relation definition',
   right_id INT UNSIGNED NOT NULL        COMMENT 'right part of the relation object id',
-  inv_name VARCHAR(255) NOT NULL        COMMENT 'inverse relation name',
   priority INT UNSIGNED NOT NULL        COMMENT 'priority order in relation',
   inv_priority INT UNSIGNED NOT NULL    COMMENT 'priority order in inverse relation',
   params MEDIUMTEXT NULL                COMMENT 'relation parameters (JSON format)',
 -- From MySQL 5.7.8 use JSON type
 
-  PRIMARY KEY left_name_right (left_id, name, right_id),
+  PRIMARY KEY left_relation_right (left_id, relation_id, right_id),
   INDEX (left_id),
   INDEX (right_id),
 
@@ -330,8 +352,8 @@ CREATE TABLE relations (
     REFERENCES objects(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION,
-  FOREIGN KEY(name)
-    REFERENCES relation_definitions(name)
+  FOREIGN KEY(relation_id)
+    REFERENCES relations(id)
       ON DELETE CASCADE
       ON UPDATE NO ACTION
 
@@ -342,7 +364,7 @@ CREATE TABLE relations (
 --   TREE
 -- -------------
 
-DROP TABLE IF EXISTS `trees`;
+DROP TABLE IF EXISTS trees;
 CREATE TABLE trees (
 
   object_id INT UNSIGNED NOT NULL       COMMENT 'object id',
