@@ -80,7 +80,7 @@ CREATE TABLE config (
 
   name VARCHAR(255) NOT NULL                  COMMENT 'configuration parameter key',
   context TEXT NOT NULL                       COMMENT 'group of configuration parameters',
-  value TEXT NOT NULL                         COMMENT 'external provider name: facebook, google, github...',
+  value TEXT NOT NULL                         COMMENT 'configuration parameter value',
   created DATETIME NOT NULL                   COMMENT 'creation date',
 
   PRIMARY KEY  (name)
